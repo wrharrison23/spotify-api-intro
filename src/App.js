@@ -78,27 +78,44 @@ export const App = () => {
     })
   }
 
-    return (
-      <>
-        <div className="App">
+    
+      if (auth.loggedIn === false) {
+        return (
+          <>
+          <div className="App">
           <Button outline color="success" size="lg">
             <a href="http://localhost:8888" className="text-success">
               {" "}
               Login to Spotify{" "}
             </a>
           </Button>
-          <h3>Top Tracks: </h3>
-          <div>
-            {tracks.trackArray?.map((item) => (
-              <p>{item}</p>
-            ))}
           </div>
-        </div>
-        <div className="getTracksDiv">
-          <button onClick={() => getTopTracks()}>Get Tracks</button>
-        </div>
-      </>
-    );
+          </>
+        )
+      } else {
+        return (
+          <>
+            <div className="App">
+              <div className="getTracksDiv">
+                <Button
+                  outline
+                  color="success"
+                  size="lg"
+                  onClick={() => getTopTracks()}
+                >
+                  Get Tracks
+                </Button>
+                <h3>Top Tracks: </h3>
+                <div>
+                  {tracks.trackArray?.map((item) => (
+                    <p>{item}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      }
 }
 
 
