@@ -4,6 +4,7 @@ import React, {useState, useEffect} from "react"
 import SpotifyWebApi from "spotify-web-api-js"
 import { useParams } from "react-router-dom";
 import { Button } from "reactstrap";
+import { traverseTwoPhase } from 'react-dom/test-utils';
 
 var Spotify = require("spotify-web-api-js");
 
@@ -40,14 +41,8 @@ export const App = () => {
         console.log(params);
         const token = params.access_token;
         console.log(token);
+        localStorage.setItem("accessToken", token)
         
-        setAuth(
-          {
-            loggedIn: token ? true : false,
-            token: token,
-          },
-          []
-      )
       }
       ;
     }, []);
@@ -60,38 +55,58 @@ export const App = () => {
   const buildTrackArray = (r) => {
     let trackArray = [];
     r.items.forEach((track) => {
-      trackArray.push(track.name);
+      trackArray.push({
+        name: track.name,
+        id:track.id
+      });
     });
     return trackArray;
   }
 
+
+  //FIX THIS//
   const getTopTracks = () => {
-    spotifyApi.setAccessToken(auth.token); 
+    spotifyApi.setAccessToken(localStorage.getItem("accessToken")); 
    
     spotifyApi.getMyTopTracks(trackOptions)
     
     .then((r) => {
+      console.log(r)
       console.log(buildTrackArray(r))
       setTracks({
         trackArray: buildTrackArray(r)
       })
+      BuildIdString(tracks.trackArray)
     })
   }
 
+  let idString = ""
+
+  const BuildIdString = (tracks) => {
+        tracks.forEach((track) => {
+        if (track.index < tracks.length - 1) {
+          idString += track.id + ",";
+        } else {
+          idString += track.id;
+        } 
+      });
+
+  }
+  console.log(idString);
     
-      if (auth.loggedIn === false) {
+      if (!localStorage.getItem("accessToken")) {
         return (
           <>
-          <div className="App">
-          <Button outline color="success" size="lg">
-            <a href="http://localhost:8888" className="text-success">
-              {" "}
-              Login to Spotify{" "}
-            </a>
-          </Button>
-          </div>
+            <div className="App">
+              <Button outline color="success" size="lg">
+                <a href="http://localhost:8888" className="text-success">
+                  {" "}
+                  Login to Spotify{" "}
+                </a>
+              </Button>
+            </div>
           </>
-        )
+        );
       } else {
         return (
           <>
@@ -107,8 +122,8 @@ export const App = () => {
                 </Button>
                 <h3>Top Tracks: </h3>
                 <div>
-                  {tracks.trackArray?.map((item) => (
-                    <p>{item}</p>
+                  {tracks.trackArray?.map(({ name} ) => (
+                    <p>{name}</p>
                   ))}
                 </div>
               </div>
