@@ -4,7 +4,7 @@ import React, {useState, useEffect} from "react"
 import SpotifyWebApi from "spotify-web-api-js"
 import { useParams } from "react-router-dom";
 import { Button } from "reactstrap";
-import { traverseTwoPhase } from 'react-dom/test-utils';
+
 
 var Spotify = require("spotify-web-api-js");
 
@@ -17,10 +17,10 @@ export const App = () => {
     loggedIn: false,
     token: ""
   })
+
   const [tracks, setTracks] = useState({})
-
-
-
+  const [ids, setIds] = useState("")
+const [features, setFeatures] = useState({})
     useEffect(() => {
         const getHashParams = () => {
           var hashParams = {};
@@ -35,14 +35,16 @@ export const App = () => {
           return hashParams;
         };
 
-
       if(!auth.token){
         const params = getHashParams();
         console.log(params);
         const token = params.access_token;
         console.log(token);
-        localStorage.setItem("accessToken", token)
-        
+        localStorage.setItem("accessToken", token)    
+        setAuth({
+          loggedIn: true,
+          token: token
+        })    
       }
       ;
     }, []);
@@ -69,32 +71,42 @@ export const App = () => {
     spotifyApi.setAccessToken(localStorage.getItem("accessToken")); 
    
     spotifyApi.getMyTopTracks(trackOptions)
-    
     .then((r) => {
       console.log(r)
       console.log(buildTrackArray(r))
       setTracks({
         trackArray: buildTrackArray(r)
       })
-      BuildIdString(tracks.trackArray)
+      
+    })
+  }
+  
+
+
+  const getFeatures = (trackArray) => {
+    let idString = ""
+      trackArray.forEach((track) => {
+        idString += track.id + ",";
+      });
+    spotifyApi.getAudioFeaturesForTracks(idString)
+    .then((r) => setFeatures(r))
+  }
+
+  const sortSong = (song) => {
+   let dance = []
+   let energy = []
+    song.filter(() => {
+      if (song.danceability > .5){
+        dance.push(song.id)
+      } else if (song.energy > .5){
+        energy.push(song.id)
+      }
     })
   }
 
-  let idString = ""
-
-  const BuildIdString = (tracks) => {
-        tracks.forEach((track) => {
-        if (track.index < tracks.length - 1) {
-          idString += track.id + ",";
-        } else {
-          idString += track.id;
-        } 
-      });
-
-  }
-  console.log(idString);
+ 
     
-      if (!localStorage.getItem("accessToken")) {
+      if (!auth.token) {
         return (
           <>
             <div className="App">
@@ -120,9 +132,17 @@ export const App = () => {
                 >
                   Get Tracks
                 </Button>
+                <Button
+                  outline
+                  color="success"
+                  size="lg"
+                  onClick={() => getFeatures(tracks.trackArray)}
+                >
+                  Get Features
+                </Button>
                 <h3>Top Tracks: </h3>
                 <div>
-                  {tracks.trackArray?.map(({ name} ) => (
+                  {tracks.trackArray?.map(({ name }) => (
                     <p>{name}</p>
                   ))}
                 </div>
