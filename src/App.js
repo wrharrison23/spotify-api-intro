@@ -5,6 +5,7 @@ import SpotifyWebApi from "spotify-web-api-js"
 import { useParams } from "react-router-dom";
 import { Button } from "reactstrap";
 
+
 var Spotify = require("spotify-web-api-js");
 
 
@@ -16,10 +17,10 @@ export const App = () => {
     loggedIn: false,
     token: ""
   })
+
   const [tracks, setTracks] = useState({})
-
-
-
+  const [ids, setIds] = useState("")
+const [features, setFeatures] = useState({})
     useEffect(() => {
         const getHashParams = () => {
           var hashParams = {};
@@ -34,20 +35,16 @@ export const App = () => {
           return hashParams;
         };
 
-
       if(!auth.token){
         const params = getHashParams();
         console.log(params);
         const token = params.access_token;
         console.log(token);
-        
-        setAuth(
-          {
-            loggedIn: token ? true : false,
-            token: token,
-          },
-          []
-      )
+        localStorage.setItem("accessToken", token)    
+        setAuth({
+          loggedIn: true,
+          token: token
+        })    
       }
       ;
     }, []);
@@ -60,45 +57,100 @@ export const App = () => {
   const buildTrackArray = (r) => {
     let trackArray = [];
     r.items.forEach((track) => {
-      trackArray.push(track.name);
+      trackArray.push({
+        name: track.name,
+        id:track.id
+      });
     });
     return trackArray;
   }
 
+
+  //FIX THIS//
   const getTopTracks = () => {
-    spotifyApi.setAccessToken(auth.token); 
+    spotifyApi.setAccessToken(localStorage.getItem("accessToken")); 
    
     spotifyApi.getMyTopTracks(trackOptions)
-    
     .then((r) => {
+      console.log(r)
       console.log(buildTrackArray(r))
       setTracks({
         trackArray: buildTrackArray(r)
       })
+      
+    })
+  }
+  
+
+
+  const getFeatures = (trackArray) => {
+    let idString = ""
+      trackArray.forEach((track) => {
+        idString += track.id + ",";
+      });
+    spotifyApi.getAudioFeaturesForTracks(idString)
+    .then((r) => setFeatures(r))
+  }
+
+  const sortSong = (song) => {
+   let dance = []
+   let energy = []
+    song.filter(() => {
+      if (song.danceability > .5){
+        dance.push(song.id)
+      } else if (song.energy > .5){
+        energy.push(song.id)
+      }
     })
   }
 
-    return (
-      <>
-        <div className="App">
-          <Button outline color="success" size="lg">
-            <a href="http://localhost:8888" className="text-success">
-              {" "}
-              Login to Spotify{" "}
-            </a>
-          </Button>
-          <h3>Top Tracks: </h3>
-          <div>
-            {tracks.trackArray?.map((item) => (
-              <p>{item}</p>
-            ))}
-          </div>
-        </div>
-        <div className="getTracksDiv">
-          <button onClick={() => getTopTracks()}>Get Tracks</button>
-        </div>
-      </>
-    );
+ 
+    
+      if (!auth.token) {
+        return (
+          <>
+            <div className="App">
+              <Button outline color="success" size="lg">
+                <a href="http://localhost:8888" className="text-success">
+                  {" "}
+                  Login to Spotify{" "}
+                </a>
+              </Button>
+            </div>
+          </>
+        );
+      } else {
+        return (
+          <>
+            <div className="App">
+              <div className="getTracksDiv">
+                <Button
+                  outline
+                  color="success"
+                  size="lg"
+                  onClick={() => getTopTracks()}
+                >
+                  Get Tracks
+                </Button>
+                <Button
+                  outline
+                  color="success"
+                  size="lg"
+                  onClick={() => getFeatures(tracks.trackArray)}
+                >
+                  Get Features
+                </Button>
+                <h3>Top Tracks: </h3>
+                <div>
+                  {tracks.trackArray?.map(({ name }) => (
+                    <p>{name}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+      }
 }
 
 
